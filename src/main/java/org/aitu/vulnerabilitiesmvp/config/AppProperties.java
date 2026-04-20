@@ -1,5 +1,6 @@
 package org.aitu.vulnerabilitiesmvp.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -21,14 +22,26 @@ public class AppProperties {
     @NotNull
     private final Fraud fraud = new Fraud();
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Returning the live security holder preserves Spring binding semantics and avoids stale copies."
+    )
     public Security getSecurity() {
         return security;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Returning the live payments holder preserves Spring binding semantics and avoids stale copies."
+    )
     public Payments getPayments() {
         return payments;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Returning the live fraud holder preserves Spring binding semantics and avoids stale copies."
+    )
     public Fraud getFraud() {
         return fraud;
     }
@@ -41,6 +54,11 @@ public class AppProperties {
         @Min(1024)
         private long maxRequestSizeBytes = 16_384;
 
+        @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "Nested JWT settings are a live configuration holder managed inside the application "
+                + "context. Returning a copy would disconnect validation/binding semantics."
+        )
         public Jwt getJwt() {
             return jwt;
         }

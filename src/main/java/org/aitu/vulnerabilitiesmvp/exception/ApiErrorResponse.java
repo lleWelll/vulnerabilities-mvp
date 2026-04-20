@@ -11,4 +11,12 @@ public record ApiErrorResponse(
     String path,
     Map<String, String> validationErrors
 ) {
+    public ApiErrorResponse {
+        validationErrors = validationErrors == null ? Map.of() : Map.copyOf(validationErrors);
+    }
+
+    @Override
+    public Map<String, String> validationErrors() {
+        return Map.copyOf(validationErrors);
+    }
 }

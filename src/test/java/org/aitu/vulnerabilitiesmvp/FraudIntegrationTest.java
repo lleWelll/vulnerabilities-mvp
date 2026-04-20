@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,6 +30,7 @@ class FraudIntegrationTest extends AbstractIntegrationTest {
     @Test
     void operatorShouldFlagPaymentManually() throws Exception {
         mockMvc.perform(post("/api/fraud/payments/{id}/flag", 2001)
+                .with(csrf())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + operatorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""

@@ -1,5 +1,6 @@
 package org.aitu.vulnerabilitiesmvp.entity;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -58,6 +59,11 @@ public class Account {
         this.id = id;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "JPA association is a managed entity reference. Copying it would break persistence semantics; "
+            + "risk is constrained by keeping entities inside the service/repository layer and returning DTOs to clients."
+    )
     public User getOwner() {
         return owner;
     }

@@ -1,5 +1,6 @@
 package org.aitu.vulnerabilitiesmvp.entity;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -84,6 +85,10 @@ public class Payment {
         this.id = id;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Managed owner reference is required for ORM consistency; DTO mapping limits external exposure."
+    )
     public User getOwnerUser() {
         return ownerUser;
     }
@@ -92,6 +97,10 @@ public class Payment {
         this.ownerUser = ownerUser;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Managed account reference is required for ORM consistency; DTO mapping limits external exposure."
+    )
     public Account getOwnerAccount() {
         return ownerAccount;
     }
@@ -100,6 +109,10 @@ public class Payment {
         this.ownerAccount = ownerAccount;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Managed receiver reference is required for ORM consistency; DTO mapping limits external exposure."
+    )
     public User getReceiverUser() {
         return receiverUser;
     }
@@ -108,6 +121,10 @@ public class Payment {
         this.receiverUser = receiverUser;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Managed account reference is required for ORM consistency; DTO mapping limits external exposure."
+    )
     public Account getReceiverAccount() {
         return receiverAccount;
     }

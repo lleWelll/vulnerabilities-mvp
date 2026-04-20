@@ -1,5 +1,6 @@
 package org.aitu.vulnerabilitiesmvp.entity;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -59,6 +60,10 @@ public class FraudFlag {
         this.id = id;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "FraudFlag must keep a live managed Payment association; API responses use DTO snapshots."
+    )
     public Payment getPayment() {
         return payment;
     }
@@ -83,6 +88,10 @@ public class FraudFlag {
         this.reason = reason;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "FraudFlag must keep a live managed User association; API responses use DTO snapshots."
+    )
     public User getFlaggedBy() {
         return flaggedBy;
     }

@@ -9,4 +9,12 @@ public record PagedResponse<T>(
     long totalElements,
     int totalPages
 ) {
+    public PagedResponse {
+        content = content == null ? List.of() : List.copyOf(content);
+    }
+
+    @Override
+    public List<T> content() {
+        return List.copyOf(content);
+    }
 }

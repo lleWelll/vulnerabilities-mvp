@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -24,6 +25,7 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
             """;
 
         String createResponse = mockMvc.perform(post("/api/payments")
+                .with(csrf())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + clientToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
@@ -36,6 +38,7 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
         long paymentId = objectMapper.readTree(createResponse).get("id").asLong();
 
         mockMvc.perform(post("/api/payments/{id}/confirm", paymentId)
+                .with(csrf())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + clientToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("CONFIRMED"))
@@ -45,6 +48,7 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldRejectPaymentFromAnotherUsersAccount() throws Exception {
         mockMvc.perform(post("/api/payments")
+                .with(csrf())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + clientToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""

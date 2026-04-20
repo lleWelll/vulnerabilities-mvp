@@ -84,7 +84,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public org.springframework.http.ResponseEntity<ApiErrorResponse> handleDataIntegrity(
-        DataIntegrityViolationException ex,
+//        DataIntegrityViolationException ex,
         HttpServletRequest request
     ) {
         log.warn("Data integrity violation at path={}", request.getRequestURI());

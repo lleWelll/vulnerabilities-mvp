@@ -12,7 +12,8 @@ import org.aitu.vulnerabilitiesmvp.config.AppProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class JwtService {
+// public class jwtService {
+public final class JwtService {
 
     private final SecretKey signingKey;
     private final long expirationMinutes;
