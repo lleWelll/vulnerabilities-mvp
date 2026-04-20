@@ -38,7 +38,9 @@ public class GlobalExceptionHandler {
         HttpMessageNotReadableException.class,
         MethodArgumentTypeMismatchException.class
     })
-    public org.springframework.http.ResponseEntity<ApiErrorResponse> handleBadRequest(Exception ex, HttpServletRequest request) {
+    public org.springframework.http.ResponseEntity<ApiErrorResponse> handleBadRequest(
+//            Exception ex,
+            HttpServletRequest request) {
         return buildError(HttpStatus.BAD_REQUEST, "Malformed or invalid request", request.getRequestURI(), Map.of());
     }
 

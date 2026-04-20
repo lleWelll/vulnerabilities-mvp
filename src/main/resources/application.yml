@@ -3,6 +3,8 @@ spring:
     name: vulnerabilities-mvp
   config:
     import: optional:file:./secret.env[.properties]
+  profiles:
+    default: dev
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/vulnerabilities_mvp}
     username: ${DB_USERNAME}

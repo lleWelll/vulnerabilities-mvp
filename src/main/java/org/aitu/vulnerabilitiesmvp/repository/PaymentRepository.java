@@ -20,6 +20,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @EntityGraph(attributePaths = {"ownerUser", "ownerAccount", "receiverUser", "receiverAccount"})
     Optional<Payment> findByIdAndOwnerUserId(Long id, Long ownerUserId);
 
+    @Override
     @EntityGraph(attributePaths = {"ownerUser", "ownerAccount", "receiverUser", "receiverAccount"})
     Optional<Payment> findById(Long id);
 
