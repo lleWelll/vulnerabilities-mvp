@@ -32,6 +32,7 @@ public class FraudService {
     private final FraudMapper fraudMapper;
     private final AuditService auditService;
     private final AppProperties appProperties;
+    private final InputNormalizationService inputNormalizationService;
 
     public FraudService(
         FraudFlagRepository fraudFlagRepository,
@@ -39,7 +40,8 @@ public class FraudService {
         UserRepository userRepository,
         FraudMapper fraudMapper,
         AuditService auditService,
-        AppProperties appProperties
+        AppProperties appProperties,
+        InputNormalizationService inputNormalizationService
     ) {
         this.fraudFlagRepository = fraudFlagRepository;
         this.paymentRepository = paymentRepository;
@@ -47,6 +49,7 @@ public class FraudService {
         this.fraudMapper = fraudMapper;
         this.auditService = auditService;
         this.appProperties = appProperties;
+        this.inputNormalizationService = inputNormalizationService;
     }
 
     @Transactional
@@ -79,7 +82,7 @@ public class FraudService {
         FraudFlag fraudFlag = new FraudFlag();
         fraudFlag.setPayment(payment);
         fraudFlag.setRiskLevel(request.riskLevel());
-        fraudFlag.setReason(request.reason().trim());
+        fraudFlag.setReason(inputNormalizationService.normalizeFreeText(request.reason(), 255, "reason"));
         fraudFlag.setFlaggedBy(operator);
         fraudFlag.setManual(true);
         FraudFlag savedFlag = fraudFlagRepository.save(fraudFlag);

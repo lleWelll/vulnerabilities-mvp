@@ -46,6 +46,10 @@ public class AppUserPrincipal implements UserDetails {
         return role == Role.OPERATOR;
     }
 
+    public boolean isClient() {
+        return role == Role.CLIENT;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

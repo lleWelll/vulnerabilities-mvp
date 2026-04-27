@@ -53,6 +53,7 @@ app:
   security:
     jwt:
       secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:vulnerabilities-mvp}
       expiration-minutes: ${JWT_EXPIRATION_MINUTES:15}
     max-request-size-bytes: ${APP_MAX_REQUEST_SIZE_BYTES:16384}
     max-file-size-bytes: ${APP_MAX_FILE_SIZE_BYTES:16384}
@@ -66,3 +67,6 @@ app:
     large-amount-threshold: ${APP_FRAUD_LARGE_AMOUNT_THRESHOLD:5000.00}
     frequency-window-minutes: ${APP_FRAUD_FREQUENCY_WINDOW_MINUTES:10}
     frequency-threshold: ${APP_FRAUD_FREQUENCY_THRESHOLD:3}
+  exports:
+    base-directory: ${APP_EXPORT_BASE_DIRECTORY:${java.io.tmpdir}/vulnerabilities-mvp-exports}
+    max-rows: ${APP_EXPORT_MAX_ROWS:100}

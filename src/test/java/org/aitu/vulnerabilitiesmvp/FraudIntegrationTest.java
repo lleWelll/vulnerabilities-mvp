@@ -1,6 +1,8 @@
 package org.aitu.vulnerabilitiesmvp;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
+import org.aitu.vulnerabilitiesmvp.enums.AuditEventType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
@@ -25,6 +27,16 @@ class FraudIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/fraud/flags")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + clientToken))
             .andExpect(status().isForbidden());
+
+        boolean deniedRequestWasAudited = auditEventRepository.findAll().stream()
+            .anyMatch(event ->
+                event.getEventType() == AuditEventType.ACCESS_DENIED
+                    && "client_alice".equals(event.getActorUsername())
+                    && "REQUEST".equals(event.getTargetType())
+                    && event.getMetadata().contains("GET /api/fraud/flags")
+            );
+
+        assertThat(deniedRequestWasAudited).isTrue();
     }
 
     @Test

@@ -29,19 +29,25 @@ public class AuditService {
         AuditOutcome outcome,
         String metadata
     ) {
+        String sanitizedActorUsername = sanitize(actorUsername, 50);
+        String sanitizedTargetType = sanitize(targetType, 50);
+        String sanitizedMetadata = sanitize(metadata, 500);
+
         AuditEvent event = new AuditEvent();
         event.setEventType(eventType);
-        event.setActorUsername(sanitize(actorUsername, 50));
-        event.setTargetType(sanitize(targetType, 50));
+        event.setActorUsername(sanitizedActorUsername);
+        event.setTargetType(sanitizedTargetType);
         event.setTargetId(targetId);
         event.setOutcome(outcome);
-        event.setMetadata(sanitize(metadata, 500));
+        event.setMetadata(sanitizedMetadata);
         auditEventRepository.save(event);
 
         if (outcome == AuditOutcome.SUCCESS) {
-            log.info("audit event={} actor={} targetType={} targetId={}", eventType, actorUsername, targetType, targetId);
+            log.info("audit event={} actor={} targetType={} targetId={}",
+                eventType, sanitizedActorUsername, sanitizedTargetType, targetId);
         } else {
-            log.warn("audit event={} actor={} targetType={} targetId={} outcome={}", eventType, actorUsername, targetType, targetId, outcome);
+            log.warn("audit event={} actor={} targetType={} targetId={} outcome={}",
+                eventType, sanitizedActorUsername, sanitizedTargetType, targetId, outcome);
         }
     }
 

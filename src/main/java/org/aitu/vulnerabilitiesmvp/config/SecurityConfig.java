@@ -52,6 +52,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/api/fraud/**").hasRole("OPERATOR")
                 .requestMatchers(HttpMethod.POST, "/api/payments/**").hasRole("CLIENT")
+                .requestMatchers(HttpMethod.GET, "/api/payments/history/**").hasRole("CLIENT")
                 .requestMatchers(HttpMethod.GET, "/api/payments/**").authenticated()
                 .anyRequest().authenticated()
             )

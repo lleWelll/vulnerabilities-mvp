@@ -2,9 +2,11 @@ package org.aitu.vulnerabilitiesmvp.service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import org.aitu.vulnerabilitiesmvp.config.AppProperties;
 import org.aitu.vulnerabilitiesmvp.dto.common.PagedResponse;
 import org.aitu.vulnerabilitiesmvp.dto.payment.CreatePaymentRequest;
+import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentHistoryQuery;
 import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentResponse;
 import org.aitu.vulnerabilitiesmvp.entity.Account;
 import org.aitu.vulnerabilitiesmvp.entity.Payment;
@@ -13,7 +15,6 @@ import org.aitu.vulnerabilitiesmvp.enums.AuditEventType;
 import org.aitu.vulnerabilitiesmvp.enums.AuditOutcome;
 import org.aitu.vulnerabilitiesmvp.enums.PaymentStatus;
 import org.aitu.vulnerabilitiesmvp.exception.BusinessConflictException;
-import org.aitu.vulnerabilitiesmvp.exception.ForbiddenOperationException;
 import org.aitu.vulnerabilitiesmvp.exception.InsufficientFundsException;
 import org.aitu.vulnerabilitiesmvp.exception.ResourceNotFoundException;
 import org.aitu.vulnerabilitiesmvp.mapper.PaymentMapper;
@@ -34,7 +35,9 @@ public class PaymentService {
     private final PaymentMapper paymentMapper;
     private final FraudService fraudService;
     private final AuditService auditService;
+    private final AuthorizationService authorizationService;
     private final AppProperties appProperties;
+    private final InputNormalizationService inputNormalizationService;
 
     public PaymentService(
         PaymentRepository paymentRepository,
@@ -42,14 +45,18 @@ public class PaymentService {
         PaymentMapper paymentMapper,
         FraudService fraudService,
         AuditService auditService,
-        AppProperties appProperties
+        AuthorizationService authorizationService,
+        AppProperties appProperties,
+        InputNormalizationService inputNormalizationService
     ) {
         this.paymentRepository = paymentRepository;
         this.accountRepository = accountRepository;
         this.paymentMapper = paymentMapper;
         this.fraudService = fraudService;
         this.auditService = auditService;
+        this.authorizationService = authorizationService;
         this.appProperties = appProperties;
+        this.inputNormalizationService = inputNormalizationService;
     }
 
     @Transactional
@@ -71,7 +78,7 @@ public class PaymentService {
         payment.setAmount(request.amount().setScale(2));
         payment.setCurrency(request.currency());
         payment.setStatus(PaymentStatus.CREATED);
-        payment.setDescription(request.description() == null ? null : request.description().trim());
+        payment.setDescription(inputNormalizationService.normalizeFreeText(request.description(), 255, "description"));
 
         Payment savedPayment = paymentRepository.save(payment);
         fraudService.evaluateOnCreate(savedPayment);
@@ -90,7 +97,7 @@ public class PaymentService {
     public PaymentResponse confirmPayment(Long paymentId, AppUserPrincipal principal) {
         Payment payment = paymentRepository.findByIdForUpdate(paymentId)
             .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
-        ensureOwnerAccess(payment, principal);
+        authorizationService.requirePaymentConfirmationAccess(payment, principal);
 
         if (payment.getStatus() == PaymentStatus.CONFIRMED) {
             throw new BusinessConflictException("Payment has already been confirmed");
@@ -126,12 +133,9 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public PagedResponse<PaymentResponse> getPaymentHistory(AppUserPrincipal principal, int page, int size) {
-        int normalizedSize = Math.min(size, appProperties.getPayments().getMaxPageSize());
-        Page<Payment> payments = paymentRepository.findByOwnerUserIdOrderByCreatedAtDesc(
-            principal.getId(),
-            PageRequest.of(page, normalizedSize, Sort.by(Sort.Direction.DESC, "createdAt"))
-        );
+    public PagedResponse<PaymentResponse> getPaymentHistory(AppUserPrincipal principal, PaymentHistoryQuery query) {
+        authorizationService.requirePaymentHistoryAccess(principal);
+        Page<Payment> payments = findPaymentHistoryPage(principal, query);
         return new PagedResponse<>(
             payments.getContent().stream().map(paymentMapper::toResponse).toList(),
             payments.getNumber(),
@@ -142,12 +146,16 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
+    public List<PaymentResponse> getPaymentHistoryEntries(AppUserPrincipal principal, PaymentHistoryQuery query) {
+        authorizationService.requirePaymentHistoryAccess(principal);
+        return findPaymentHistoryPage(principal, query).getContent().stream().map(paymentMapper::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
     public PaymentResponse getPayment(Long paymentId, AppUserPrincipal principal) {
         Payment payment = paymentRepository.findById(paymentId)
             .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
-        if (!principal.isOperator()) {
-            ensureOwnerAccess(payment, principal);
-        }
+        authorizationService.requirePaymentReadAccess(payment, principal);
         return paymentMapper.toResponse(payment);
     }
 
@@ -171,20 +179,6 @@ public class PaymentService {
         }
     }
 
-    private void ensureOwnerAccess(Payment payment, AppUserPrincipal principal) {
-        if (!payment.getOwnerUser().getId().equals(principal.getId())) {
-            auditService.record(
-                AuditEventType.ACCESS_DENIED,
-                principal.getUsername(),
-                "PAYMENT",
-                payment.getId(),
-                AuditOutcome.FAILURE,
-                "Attempt to access payment owned by another user"
-            );
-            throw new ForbiddenOperationException("You are not allowed to access this payment");
-        }
-    }
-
     private LockedAccounts lockPaymentAccounts(Payment payment) {
         Long sourceId = payment.getOwnerAccount().getId();
         Long receiverId = payment.getReceiverAccount().getId();
@@ -199,6 +193,23 @@ public class PaymentService {
         Account sourceAccount = first.getId().equals(sourceId) ? first : second;
         Account receiverAccount = first.getId().equals(receiverId) ? first : second;
         return new LockedAccounts(sourceAccount, receiverAccount);
+    }
+
+    private Page<Payment> findPaymentHistoryPage(AppUserPrincipal principal, PaymentHistoryQuery query) {
+        int normalizedSize = Math.min(query.size(), Math.min(
+            appProperties.getPayments().getMaxPageSize(),
+            appProperties.getExports().getMaxRows()
+        ));
+        String normalizedReceiverUsername = inputNormalizationService.normalizeUsernameFilter(
+            query.receiverUsername(),
+            "receiverUsername"
+        );
+        return paymentRepository.findHistoryByOwnerAndFilters(
+            principal.getId(),
+            query.status(),
+            normalizedReceiverUsername,
+            PageRequest.of(query.page(), normalizedSize, Sort.by(Sort.Direction.DESC, "createdAt"))
+        );
     }
 
     private record LockedAccounts(Account sourceAccount, Account receiverAccount) {

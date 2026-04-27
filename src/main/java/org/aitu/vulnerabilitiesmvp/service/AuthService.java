@@ -37,6 +37,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthMapper authMapper;
     private final AuditService auditService;
+    private final InputNormalizationService inputNormalizationService;
 
     public AuthService(
         UserRepository userRepository,
@@ -45,7 +46,8 @@ public class AuthService {
         AuthenticationManager authenticationManager,
         JwtService jwtService,
         AuthMapper authMapper,
-        AuditService auditService
+        AuditService auditService,
+        InputNormalizationService inputNormalizationService
     ) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
@@ -54,16 +56,18 @@ public class AuthService {
         this.jwtService = jwtService;
         this.authMapper = authMapper;
         this.auditService = auditService;
+        this.inputNormalizationService = inputNormalizationService;
     }
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.username())) {
+        String normalizedUsername = inputNormalizationService.normalizeUsername(request.username(), "username");
+        if (userRepository.existsByUsername(normalizedUsername)) {
             throw new DuplicateResourceException("Username is already taken");
         }
 
         User user = new User();
-        user.setUsername(request.username().trim());
+        user.setUsername(normalizedUsername);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(Role.CLIENT);
         user.setEnabled(true);
@@ -88,9 +92,10 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
+        String normalizedUsername = inputNormalizationService.normalizeUsername(request.username(), "username");
         try {
             Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username().trim(), request.password())
+                new UsernamePasswordAuthenticationToken(normalizedUsername, request.password())
             );
             AppUserPrincipal principal = (AppUserPrincipal) authentication.getPrincipal();
             auditService.record(
@@ -105,7 +110,7 @@ public class AuthService {
         } catch (BadCredentialsException | DisabledException ex) {
             auditService.record(
                 AuditEventType.LOGIN_FAILED,
-                request.username().trim(),
+                normalizedUsername,
                 "AUTH",
                 null,
                 AuditOutcome.FAILURE,

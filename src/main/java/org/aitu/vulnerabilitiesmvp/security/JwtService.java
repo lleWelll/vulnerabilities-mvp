@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.aitu.vulnerabilitiesmvp.config.AppProperties;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,12 @@ import org.springframework.stereotype.Service;
 public final class JwtService {
 
     private final SecretKey signingKey;
+    private final String issuer;
     private final long expirationMinutes;
 
     public JwtService(AppProperties appProperties) {
         this.signingKey = buildSigningKey(appProperties.getSecurity().getJwt().getSecret());
+        this.issuer = appProperties.getSecurity().getJwt().getIssuer();
         this.expirationMinutes = appProperties.getSecurity().getJwt().getExpirationMinutes();
     }
 
@@ -29,8 +32,11 @@ public final class JwtService {
 
         return Jwts.builder()
             .subject(principal.getUsername())
+            .issuer(issuer)
+            .id(UUID.randomUUID().toString())
             .claims(Map.of("role", principal.getRole().name(), "uid", principal.getId()))
             .issuedAt(Date.from(issuedAt))
+            .notBefore(Date.from(issuedAt))
             .expiration(Date.from(expiresAt))
             .signWith(signingKey)
             .compact();
@@ -42,7 +48,17 @@ public final class JwtService {
 
     public boolean isTokenValid(String token, AppUserPrincipal principal) {
         Claims claims = extractAllClaims(token);
-        return principal.getUsername().equals(claims.getSubject()) && claims.getExpiration().after(new Date());
+        Number uidClaim = claims.get("uid", Number.class);
+        String roleClaim = claims.get("role", String.class);
+        if (uidClaim == null || roleClaim == null) {
+            return false;
+        }
+
+        return principal.getUsername().equals(claims.getSubject())
+            && issuer.equals(claims.getIssuer())
+            && principal.getId().equals(uidClaim.longValue())
+            && principal.getRole().name().equals(roleClaim)
+            && claims.getExpiration().after(new Date());
     }
 
     public long getExpirationSeconds() {

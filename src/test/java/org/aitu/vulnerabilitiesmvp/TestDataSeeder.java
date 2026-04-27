@@ -65,6 +65,16 @@ class TestDataSeeder implements ApplicationRunner {
             2001L, 101L, 1001L, 102L, 1002L,
             "7000.00", "KZT", "FLAGGED", "High amount transfer", true, timestamp, null, 0L
         );
+        jdbcTemplate.update(
+            """
+                insert into payment (
+                    id, owner_user_id, owner_account_id, receiver_user_id, receiver_account_id,
+                    amount, currency, status, description, flagged, created_at, confirmed_at, version
+                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+            2002L, 102L, 1002L, 101L, 1001L,
+            "350.00", "KZT", "CONFIRMED", "Routine transfer", false, timestamp, timestamp, 0L
+        );
 
         jdbcTemplate.update(
             "insert into fraud_flag (id, payment_id, risk_level, reason, flagged_by, manual, created_at) values (?, ?, ?, ?, ?, ?, ?)",

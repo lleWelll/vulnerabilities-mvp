@@ -58,6 +58,15 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage(), request.getRequestURI(), Map.of());
     }
 
+    @ExceptionHandler(InvalidInputException.class)
+    public org.springframework.http.ResponseEntity<ApiErrorResponse> handleInvalidInput(
+        InvalidInputException ex,
+        HttpServletRequest request
+    ) {
+        log.warn("Invalid input at path={} message={}", request.getRequestURI(), ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI(), Map.of());
+    }
+
     @ExceptionHandler(DuplicateResourceException.class)
     public org.springframework.http.ResponseEntity<ApiErrorResponse> handleDuplicate(
         DuplicateResourceException ex,

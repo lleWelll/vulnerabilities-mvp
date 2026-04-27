@@ -7,12 +7,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
+import org.aitu.vulnerabilitiesmvp.enums.AuditEventType;
+import org.aitu.vulnerabilitiesmvp.enums.AuditOutcome;
 import org.aitu.vulnerabilitiesmvp.exception.ApiErrorResponse;
+import org.aitu.vulnerabilitiesmvp.service.AuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
@@ -22,9 +27,11 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
     private static final Logger log = LoggerFactory.getLogger(RestAccessDeniedHandler.class);
 
     private final ObjectMapper objectMapper;
+    private final AuditService auditService;
 
-    public RestAccessDeniedHandler(ObjectMapper objectMapper) {
+    public RestAccessDeniedHandler(ObjectMapper objectMapper, AuditService auditService) {
         this.objectMapper = objectMapper;
+        this.auditService = auditService;
     }
 
     @Override
@@ -34,6 +41,7 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         AccessDeniedException accessDeniedException
     ) throws IOException, ServletException {
         log.warn("Access denied for path={}", request.getRequestURI());
+        recordAuditEvent(request);
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getOutputStream(), new ApiErrorResponse(
@@ -44,5 +52,18 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
             request.getRequestURI(),
             Map.of()
         ));
+    }
+
+    private void recordAuditEvent(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String actor = authentication != null && authentication.isAuthenticated() ? authentication.getName() : "anonymous";
+        auditService.record(
+            AuditEventType.ACCESS_DENIED,
+            actor,
+            "REQUEST",
+            null,
+            AuditOutcome.FAILURE,
+            request.getMethod() + " " + request.getRequestURI()
+        );
     }
 }

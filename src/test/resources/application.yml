@@ -22,6 +22,7 @@ app:
   security:
     jwt:
       secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+      issuer: vulnerabilities-mvp-test
       expiration-minutes: 15
     max-request-size-bytes: 16384
     max-file-size-bytes: 16384
@@ -35,3 +36,6 @@ app:
     large-amount-threshold: 5000.00
     frequency-window-minutes: 10
     frequency-threshold: 3
+  exports:
+    base-directory: ${java.io.tmpdir}/vulnerabilities-mvp-exports-test
+    max-rows: 100

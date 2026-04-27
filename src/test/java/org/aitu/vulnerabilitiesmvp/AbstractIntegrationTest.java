@@ -2,6 +2,7 @@ package org.aitu.vulnerabilitiesmvp;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.aitu.vulnerabilitiesmvp.repository.AuditEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,12 +29,17 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected ObjectMapper objectMapper;
 
+    @Autowired
+    protected AuditEventRepository auditEventRepository;
+
     protected String clientToken;
+    protected String bobToken;
     protected String operatorToken;
 
     @BeforeEach
     void authenticateSeedUsers() throws Exception {
         clientToken = loginAndGetToken("client_alice", "AlicePass123!");
+        bobToken = loginAndGetToken("client_bob", "BobPass123!");
         operatorToken = loginAndGetToken("operator_jane", "OperatorPass123!");
     }
 

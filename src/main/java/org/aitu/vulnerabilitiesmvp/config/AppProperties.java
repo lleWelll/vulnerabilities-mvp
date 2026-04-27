@@ -23,6 +23,9 @@ public class AppProperties {
     @NotNull
     private final Fraud fraud = new Fraud();
 
+    @NotNull
+    private final Exports exports = new Exports();
+
     @SuppressFBWarnings(
         value = "EI_EXPOSE_REP",
         justification = "Returning the live security holder preserves Spring binding semantics and avoids stale copies."
@@ -45,6 +48,14 @@ public class AppProperties {
     )
     public Fraud getFraud() {
         return fraud;
+    }
+
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Returning the live exports holder preserves Spring binding semantics and avoids stale copies."
+    )
+    public Exports getExports() {
+        return exports;
     }
 
     public static class Security {
@@ -122,6 +133,9 @@ public class AppProperties {
         @NotBlank
         private String secret;
 
+        @NotBlank
+        private String issuer = "vulnerabilities-mvp";
+
         @Min(1)
         private long expirationMinutes = 15;
 
@@ -131,6 +145,14 @@ public class AppProperties {
 
         public void setSecret(String secret) {
             this.secret = secret;
+        }
+
+        public String getIssuer() {
+            return issuer;
+        }
+
+        public void setIssuer(String issuer) {
+            this.issuer = issuer;
         }
 
         public long getExpirationMinutes() {
@@ -203,6 +225,32 @@ public class AppProperties {
 
         public void setFrequencyThreshold(int frequencyThreshold) {
             this.frequencyThreshold = frequencyThreshold;
+        }
+    }
+
+    public static class Exports {
+
+        @NotBlank
+        private String baseDirectory;
+
+        @Min(1)
+        @Max(100)
+        private int maxRows = 100;
+
+        public String getBaseDirectory() {
+            return baseDirectory;
+        }
+
+        public void setBaseDirectory(String baseDirectory) {
+            this.baseDirectory = baseDirectory;
+        }
+
+        public int getMaxRows() {
+            return maxRows;
+        }
+
+        public void setMaxRows(int maxRows) {
+            this.maxRows = maxRows;
         }
     }
 }
