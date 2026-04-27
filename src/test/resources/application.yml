@@ -24,6 +24,10 @@ app:
       secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
       expiration-minutes: 15
     max-request-size-bytes: 16384
+    max-file-size-bytes: 16384
+    max-json-string-length: 4096
+    max-json-nesting-depth: 40
+    max-json-number-length: 64
   payments:
     default-page-size: 20
     max-page-size: 100

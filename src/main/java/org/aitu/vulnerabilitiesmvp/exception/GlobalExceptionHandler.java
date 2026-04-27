@@ -1,5 +1,8 @@
 package org.aitu.vulnerabilitiesmvp.exception;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.exc.StreamConstraintsException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
@@ -39,9 +42,20 @@ public class GlobalExceptionHandler {
         MethodArgumentTypeMismatchException.class
     })
     public org.springframework.http.ResponseEntity<ApiErrorResponse> handleBadRequest(
-//            Exception ex,
-            HttpServletRequest request) {
-        return buildError(HttpStatus.BAD_REQUEST, "Malformed or invalid request", request.getRequestURI(), Map.of());
+        Exception ex,
+        HttpServletRequest request) {
+        String message = resolveBadRequestMessage(ex);
+        log.warn("Bad request at path={} message={}", request.getRequestURI(), message);
+        return buildError(HttpStatus.BAD_REQUEST, message, request.getRequestURI(), Map.of());
+    }
+
+    @ExceptionHandler(RequestBodyTooLargeException.class)
+    public org.springframework.http.ResponseEntity<ApiErrorResponse> handlePayloadTooLarge(
+        RequestBodyTooLargeException ex,
+        HttpServletRequest request
+    ) {
+        log.warn("Payload too large at path={}", request.getRequestURI());
+        return buildError(HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage(), request.getRequestURI(), Map.of());
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
@@ -117,5 +131,27 @@ public class GlobalExceptionHandler {
             validationErrors
         );
         return org.springframework.http.ResponseEntity.status(status).body(body);
+    }
+
+    private String resolveBadRequestMessage(Exception ex) {
+        Throwable cause = mostSpecificCause(ex);
+        if (cause instanceof StreamConstraintsException) {
+            return "Request JSON exceeds parsing safety limits";
+        }
+        if (cause instanceof JsonParseException) {
+            return "Malformed JSON request body";
+        }
+        if (cause instanceof JsonMappingException) {
+            return "Malformed or invalid request";
+        }
+        return "Malformed or invalid request";
+    }
+
+    private Throwable mostSpecificCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
     }
 }

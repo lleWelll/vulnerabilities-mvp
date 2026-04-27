@@ -28,6 +28,8 @@ spring:
   servlet:
     multipart:
       enabled: false
+      max-file-size: 16KB
+      max-request-size: 16KB
 
 server:
   port: ${SERVER_PORT:8080}
@@ -53,6 +55,10 @@ app:
       secret: ${JWT_SECRET}
       expiration-minutes: ${JWT_EXPIRATION_MINUTES:15}
     max-request-size-bytes: ${APP_MAX_REQUEST_SIZE_BYTES:16384}
+    max-file-size-bytes: ${APP_MAX_FILE_SIZE_BYTES:16384}
+    max-json-string-length: ${APP_MAX_JSON_STRING_LENGTH:4096}
+    max-json-nesting-depth: ${APP_MAX_JSON_NESTING_DEPTH:40}
+    max-json-number-length: ${APP_MAX_JSON_NUMBER_LENGTH:64}
   payments:
     default-page-size: ${APP_DEFAULT_PAGE_SIZE:20}
     max-page-size: ${APP_MAX_PAGE_SIZE:100}
