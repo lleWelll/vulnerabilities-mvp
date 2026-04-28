@@ -15,7 +15,6 @@ import org.aitu.vulnerabilitiesmvp.config.AppProperties;
 import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentExportFormat;
 import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentHistoryQuery;
 import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentResponse;
-import org.aitu.vulnerabilitiesmvp.exception.InvalidInputException;
 import org.aitu.vulnerabilitiesmvp.security.AppUserPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,12 +52,9 @@ public class PaymentExportService {
     ) {
         List<PaymentResponse> payments = paymentService.getPaymentHistoryEntries(principal, query);
         String baseName = inputNormalizationService.normalizeExportBaseName(requestedFileName, "payment-history");
-        String fileName = buildFileName(baseName, format);
+        String fileName = buildDownloadFileName(baseName, format);
         Path exportDir = resolveExportDirectory();
-        Path exportPath = exportDir.resolve(fileName).normalize();
-        if (!exportPath.startsWith(exportDir)) {
-            throw new InvalidInputException("Resolved export path is outside the allowed directory");
-        }
+        Path exportPath = createTempExportPath(exportDir, baseName, format);
 
         try {
             writeExportFile(exportPath, format, payments);
@@ -87,14 +83,18 @@ public class PaymentExportService {
         }
     }
 
-    private String buildFileName(String baseName, PaymentExportFormat format) {
-        String extension = switch (format) {
-            case CSV -> "csv";
-            case JSON -> "json";
-            case XML -> "xml";
-        };
+    private String buildDownloadFileName(String baseName, PaymentExportFormat format) {
         String timestamp = FILE_TIMESTAMP_FORMATTER.format(ZonedDateTime.now(ZoneOffset.UTC));
-        return baseName + "-" + timestamp + "." + extension;
+        return baseName + "-" + timestamp + "." + resolveExtension(format);
+    }
+
+    private Path createTempExportPath(Path exportDir, String baseName, PaymentExportFormat format) {
+        try {
+            // Create the server-side export file inside the approved directory only.
+            return Files.createTempFile(exportDir, baseName + "-", "." + resolveExtension(format));
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to allocate temporary export file", ex);
+        }
     }
 
     private MediaType resolveMediaType(PaymentExportFormat format) {
@@ -102,6 +102,14 @@ public class PaymentExportService {
             case CSV -> new MediaType("text", "csv", StandardCharsets.UTF_8);
             case JSON -> MediaType.APPLICATION_JSON;
             case XML -> MediaType.APPLICATION_XML;
+        };
+    }
+
+    private String resolveExtension(PaymentExportFormat format) {
+        return switch (format) {
+            case CSV -> "csv";
+            case JSON -> "json";
+            case XML -> "xml";
         };
     }
 

@@ -55,7 +55,7 @@ public class AuditService {
         if (value == null || value.isBlank()) {
             return "-";
         }
-        String sanitized = value.replaceAll("[\\r\\n\\t]", " ").trim();
+        String sanitized = value.replaceAll("[\\r\\n\\t]+", " ").replaceAll(" {2,}", " ").trim();
         return sanitized.length() > maxLength ? sanitized.substring(0, maxLength) : sanitized;
     }
 }

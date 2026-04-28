@@ -2,6 +2,9 @@ package org.aitu.vulnerabilitiesmvp;
 
 import static org.hamcrest.Matchers.containsString;
 import org.junit.jupiter.api.Test;
+import org.aitu.vulnerabilitiesmvp.entity.AuditEvent;
+import org.aitu.vulnerabilitiesmvp.enums.AuditEventType;
+import org.aitu.vulnerabilitiesmvp.enums.AuditOutcome;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
@@ -105,6 +108,15 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + operatorToken))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message").value("You are not allowed to access this resource"));
+
+        AuditEvent latestEvent = auditEventRepository.findTopByOrderByIdDesc()
+            .orElseThrow(() -> new AssertionError("Expected ACCESS_DENIED audit event"));
+
+        org.assertj.core.api.Assertions.assertThat(latestEvent.getEventType()).isEqualTo(AuditEventType.ACCESS_DENIED);
+        org.assertj.core.api.Assertions.assertThat(latestEvent.getActorUsername()).isEqualTo("operator_jane");
+        org.assertj.core.api.Assertions.assertThat(latestEvent.getTargetType()).isEqualTo("REQUEST");
+        org.assertj.core.api.Assertions.assertThat(latestEvent.getOutcome()).isEqualTo(AuditOutcome.FAILURE);
+        org.assertj.core.api.Assertions.assertThat(latestEvent.getMetadata()).isEqualTo("GET /api/payments/history");
     }
 
     @Test

@@ -2,6 +2,7 @@ package org.aitu.vulnerabilitiesmvp;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.aitu.vulnerabilitiesmvp.config.AppProperties;
 import org.aitu.vulnerabilitiesmvp.repository.AuditEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ public abstract class AbstractIntegrationTest {
 
     @Autowired
     protected AuditEventRepository auditEventRepository;
+
+    @Autowired
+    protected AppProperties appProperties;
 
     protected String clientToken;
     protected String bobToken;

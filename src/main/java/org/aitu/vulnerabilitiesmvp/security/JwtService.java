@@ -50,7 +50,19 @@ public final class JwtService {
         Claims claims = extractAllClaims(token);
         Number uidClaim = claims.get("uid", Number.class);
         String roleClaim = claims.get("role", String.class);
-        if (uidClaim == null || roleClaim == null) {
+        String tokenId = claims.getId();
+        Date issuedAt = claims.getIssuedAt();
+        Date notBefore = claims.getNotBefore();
+        Date expiration = claims.getExpiration();
+        Date now = new Date();
+
+        if (uidClaim == null
+            || roleClaim == null
+            || tokenId == null
+            || tokenId.isBlank()
+            || issuedAt == null
+            || notBefore == null
+            || expiration == null) {
             return false;
         }
 
@@ -58,7 +70,9 @@ public final class JwtService {
             && issuer.equals(claims.getIssuer())
             && principal.getId().equals(uidClaim.longValue())
             && principal.getRole().name().equals(roleClaim)
-            && claims.getExpiration().after(new Date());
+            && !issuedAt.after(now)
+            && !notBefore.after(now)
+            && expiration.after(now);
     }
 
     public long getExpirationSeconds() {

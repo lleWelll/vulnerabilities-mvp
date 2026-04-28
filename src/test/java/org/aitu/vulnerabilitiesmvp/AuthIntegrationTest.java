@@ -1,11 +1,20 @@
 package org.aitu.vulnerabilitiesmvp;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
+import javax.crypto.SecretKey;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -93,5 +102,47 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
                 .with(csrf()))
             .andExpect(status().isUnsupportedMediaType())
             .andExpect(jsonPath("$.message").value("File uploads are not supported by this API"));
+    }
+
+    @Test
+    void shouldRejectSignedJwtWithWrongIssuer() throws Exception {
+        SecretKey signingKey = buildSigningKey();
+        Instant issuedAt = Instant.now();
+        String forgedToken = Jwts.builder()
+            .subject("client_alice")
+            .issuer("foreign-issuer")
+            .id(UUID.randomUUID().toString())
+            .claims(Map.of("role", "CLIENT", "uid", 101L))
+            .issuedAt(Date.from(issuedAt))
+            .notBefore(Date.from(issuedAt))
+            .expiration(Date.from(issuedAt.plusSeconds(300)))
+            .signWith(signingKey)
+            .compact();
+
+        mockMvc.perform(get("/api/payments/history")
+                .header("Authorization", "Bearer " + forgedToken))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldRejectLegacySignedJwtWithoutRequiredBindingFields() throws Exception {
+        SecretKey signingKey = buildSigningKey();
+        Instant issuedAt = Instant.now();
+        String legacyToken = Jwts.builder()
+            .subject("client_alice")
+            .issuer(appProperties.getSecurity().getJwt().getIssuer())
+            .claims(Map.of("role", "CLIENT", "uid", 101L))
+            .issuedAt(Date.from(issuedAt))
+            .expiration(Date.from(issuedAt.plusSeconds(300)))
+            .signWith(signingKey)
+            .compact();
+
+        mockMvc.perform(get("/api/payments/history")
+                .header("Authorization", "Bearer " + legacyToken))
+            .andExpect(status().isUnauthorized());
+    }
+
+    private SecretKey buildSigningKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(appProperties.getSecurity().getJwt().getSecret()));
     }
 }
