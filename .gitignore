@@ -34,4 +34,13 @@ build/
 
 # ENV
 *.env
+.env.*
+!.env.example
 secret.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
