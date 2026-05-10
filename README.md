@@ -22,11 +22,11 @@ Compose поднимает:
 
 Dev seed users создаются backend-профилем `dev`:
 
-| Username | Password | Role |
-| --- | --- | --- |
-| `test_client_1` | `ClientOnePass123!` | `CLIENT` |
-| `test_client_2` | `ClientTwoPass123!` | `CLIENT` |
-| `test_operator` | `OperatorPass123!` | `OPERATOR` |
+| Username | Password          | Role |
+| --- |-------------------| --- |
+| `test_client_1` | `test_1`          | `CLIENT` |
+| `test_client_2` | `test_2`          | `CLIENT` |
+| `test_operator` | `operator_test_1` | `OPERATOR` |
 
 Остановка:
 
