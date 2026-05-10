@@ -1,0 +1,12 @@
+target/
+.mvn/wrapper/maven-wrapper.jar
+.git/
+.idea/
+.DS_Store
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+*.log
+secret.env
+codeql-results*.sarif
+semgrep-*.json

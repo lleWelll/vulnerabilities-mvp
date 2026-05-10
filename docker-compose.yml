@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: vulnerabilities-mvp-postgres
+    environment:
+      POSTGRES_DB: vulnerabilities_mvp
+      POSTGRES_USER: vulnerabilities_app
+      POSTGRES_PASSWORD: vulnerabilities_app_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vulnerabilities_app -d vulnerabilities_mvp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vulnerabilities-mvp-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://postgres:5432/vulnerabilities_mvp
+      DB_USERNAME: vulnerabilities_app
+      DB_PASSWORD: vulnerabilities_app_password
+      JWT_SECRET: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+      JWT_ISSUER: vulnerabilities-mvp
+      JWT_EXPIRATION_MINUTES: 15
+      APP_EXPORT_BASE_DIRECTORY: /app/exports
+      SEED_USER_TEST_CLIENT_1_PASSWORD: ClientOnePass123!
+      SEED_USER_TEST_CLIENT_2_PASSWORD: ClientTwoPass123!
+      SEED_USER_TEST_OPERATOR_PASSWORD: OperatorPass123!
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend-exports:/app/exports
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8080/api
+    container_name: vulnerabilities-mvp-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  backend-exports:
