@@ -15,6 +15,7 @@ import org.aitu.vulnerabilitiesmvp.config.AppProperties;
 import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentExportFormat;
 import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentHistoryQuery;
 import org.aitu.vulnerabilitiesmvp.dto.payment.PaymentResponse;
+import org.aitu.vulnerabilitiesmvp.exception.InvalidInputException;
 import org.aitu.vulnerabilitiesmvp.security.AppUserPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,11 +95,27 @@ public class PaymentExportService {
 
     private Path createTempExportPath(Path exportDir, String baseName, PaymentExportFormat format) {
         try {
-            // Create the server-side export file inside the approved directory only.
-            return Files.createTempFile(exportDir, baseName + "-", "." + resolveExtension(format));
+            // OWASP-10: Software or Data Integrity Failures - небезопасный/короткий prefix мог приводить к
+            // ошибке 500 или записи не туда при будущих изменениях path logic. Исправление: безопасный prefix
+            // для temp file и явная проверка, что итоговый путь внутри approved export directory.
+            String safePrefix = buildSafeTempFilePrefix(baseName);
+            Path exportPath = Files.createTempFile(exportDir, safePrefix + "-", "." + resolveExtension(format))
+                .toAbsolutePath()
+                .normalize();
+            if (!exportPath.startsWith(exportDir)) {
+                throw new InvalidInputException("Resolved export path is outside the allowed directory");
+            }
+            return exportPath;
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to allocate temporary export file", ex);
         }
+    }
+
+    private String buildSafeTempFilePrefix(String baseName) {
+        if (baseName.length() >= 3) {
+            return baseName;
+        }
+        return (baseName + "___").substring(0, 3);
     }
 
     private MediaType resolveMediaType(PaymentExportFormat format) {

@@ -12,7 +12,6 @@ export function LoginPage() {
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/dashboard";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +28,7 @@ export function LoginPage() {
     }
     setLoading(true);
     try {
-      await login({ username, password }, remember);
+      await login({ username, password });
       navigate(from, { replace: true });
     } catch (err) {
       setError(normalizeApiError(err));
@@ -66,10 +65,8 @@ export function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             required
           />
-          <label className="inline-field">
-            <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
-            <span>Keep me signed in</span>
-          </label>
+          {/* OWASP-10: Cryptographic Failures - persistent "Keep me signed in" stored JWT in localStorage.
+              Исправление: опция удалена, сессия ограничена sessionStorage и exp токена. */}
           <button className="button button-primary" disabled={loading} type="submit">
             {loading ? "Signing in..." : "Sign in"}
           </button>

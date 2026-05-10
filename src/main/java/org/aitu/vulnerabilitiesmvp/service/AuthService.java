@@ -11,6 +11,7 @@ import org.aitu.vulnerabilitiesmvp.enums.AuditEventType;
 import org.aitu.vulnerabilitiesmvp.enums.AuditOutcome;
 import org.aitu.vulnerabilitiesmvp.enums.CurrencyCode;
 import org.aitu.vulnerabilitiesmvp.enums.Role;
+import org.aitu.vulnerabilitiesmvp.exception.AuthenticationRateLimitException;
 import org.aitu.vulnerabilitiesmvp.exception.DuplicateResourceException;
 import org.aitu.vulnerabilitiesmvp.exception.InvalidCredentialsException;
 import org.aitu.vulnerabilitiesmvp.mapper.AuthMapper;
@@ -38,6 +39,7 @@ public class AuthService {
     private final AuthMapper authMapper;
     private final AuditService auditService;
     private final InputNormalizationService inputNormalizationService;
+    private final LoginAttemptService loginAttemptService;
 
     public AuthService(
         UserRepository userRepository,
@@ -47,7 +49,8 @@ public class AuthService {
         JwtService jwtService,
         AuthMapper authMapper,
         AuditService auditService,
-        InputNormalizationService inputNormalizationService
+        InputNormalizationService inputNormalizationService,
+        LoginAttemptService loginAttemptService
     ) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
@@ -57,6 +60,7 @@ public class AuthService {
         this.authMapper = authMapper;
         this.auditService = auditService;
         this.inputNormalizationService = inputNormalizationService;
+        this.loginAttemptService = loginAttemptService;
     }
 
     /* normalize
@@ -116,11 +120,25 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         String normalizedUsername = inputNormalizationService.normalizeUsername(request.username(), "username");
+        // OWASP-10: Authentication Failures - раньше endpoint login принимал неограниченное число попыток.
+        // Исправление: до проверки пароля блокируем principal после серии неудачных попыток.
+        if (loginAttemptService.isBlocked(normalizedUsername)) {
+            auditService.record(
+                AuditEventType.LOGIN_FAILED,
+                normalizedUsername,
+                "AUTH",
+                null,
+                AuditOutcome.FAILURE,
+                "Login throttled"
+            );
+            throw new AuthenticationRateLimitException("Too many failed login attempts. Try again later.");
+        }
         try {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(normalizedUsername, request.password())
             );
             AppUserPrincipal principal = (AppUserPrincipal) authentication.getPrincipal();
+            loginAttemptService.recordSuccess(normalizedUsername);
             auditService.record(
                 AuditEventType.LOGIN_SUCCEEDED,
                 principal.getUsername(),
@@ -139,6 +157,7 @@ public class AuthService {
                 AuditOutcome.FAILURE,
                 "Invalid credentials"
             );
+            loginAttemptService.recordFailure(normalizedUsername);
             throw new InvalidCredentialsException("Invalid username or password");
         }
     }

@@ -56,12 +56,6 @@ export interface RegisterResponse {
   createdAt: string;
 }
 
-export interface CsrfTokenResponse {
-  headerName: string;
-  parameterName: string;
-  token: string;
-}
-
 export interface AuthUser {
   username: string;
   role: Role;

@@ -1,6 +1,5 @@
 import { apiClient } from "./apiClient";
 import type {
-  CsrfTokenResponse,
   CreatePaymentRequest,
   ExportHistoryParams,
   FlagFraudRequest,
@@ -15,10 +14,8 @@ import type {
 } from "../types";
 
 export const authApi = {
-  csrf: async () => {
-    const { data } = await apiClient.get<CsrfTokenResponse>("/auth/csrf");
-    return data;
-  },
+  // OWASP-10: Mishandling of Exceptional Conditions - frontend no longer calls removed disabled-CSRF endpoint.
+  // Stateless authentication is handled through short-lived Bearer tokens only.
   login: async (payload: LoginRequest) => {
     const { data } = await apiClient.post<LoginResponse>("/auth/login", payload);
     return data;

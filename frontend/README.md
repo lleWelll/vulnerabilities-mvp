@@ -37,7 +37,6 @@ The production files are emitted to `frontend/dist`.
 
 ## Covered API
 
-- `GET /api/auth/csrf`: API helper is present. CSRF is disabled in the current stateless JWT backend.
 - `POST /api/auth/register`: `/register`, creates a CLIENT user and shows the default account ID returned by the backend.
 - `POST /api/auth/login`: `/login`, stores JWT auth state.
 - `POST /api/payments`: `/payments/new`, CLIENT only.
@@ -61,7 +60,7 @@ The backend roles are `CLIENT` and `OPERATOR`; there is no `ADMIN` role in the c
 ## Security Notes
 
 - API base URL is read from `VITE_API_BASE_URL`; no secrets are stored in frontend code.
-- JWT access token and non-sensitive user metadata are stored in `localStorage` when "Keep me signed in" is enabled, otherwise `sessionStorage`.
+- JWT access token and non-sensitive user metadata are stored only in `sessionStorage`; legacy `localStorage` auth state is cleared on startup/request.
 - Axios interceptors attach `Authorization: Bearer <token>` to protected requests.
 - Expired or invalid local auth state is cleared automatically. Backend `401` responses log the user out.
 - Backend `403` responses are displayed as permission errors and role-only routes are hidden from the menu.

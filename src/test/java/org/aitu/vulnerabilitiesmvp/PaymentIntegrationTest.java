@@ -103,6 +103,15 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldRejectConfirmationOfFlaggedPayment() throws Exception {
+        mockMvc.perform(post("/api/payments/{id}/confirm", 2001)
+                .with(csrf())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + clientToken))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value("Flagged payment requires fraud review before confirmation"));
+    }
+
+    @Test
     void operatorShouldNotAccessClientHistory() throws Exception {
         mockMvc.perform(get("/api/payments/history")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + operatorToken))
@@ -180,5 +189,15 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
                 .param("format", "JSON")
                 .param("fileName", "../evil"))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldExportHistoryWithShortSafeFileName() throws Exception {
+        mockMvc.perform(get("/api/payments/history/export")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + clientToken)
+                .param("format", "JSON")
+                .param("fileName", "a"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("a-")));
     }
 }

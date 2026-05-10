@@ -55,6 +55,31 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldThrottleRepeatedInvalidLoginAttempts() throws Exception {
+        String payload = """
+            {
+              "username": "missing_user",
+              "password": "WrongPass123!"
+            }
+            """;
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            mockMvc.perform(post("/api/auth/login")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload))
+                .andExpect(status().isUnauthorized());
+        }
+
+        mockMvc.perform(post("/api/auth/login")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.message").value("Too many failed login attempts. Try again later."));
+    }
+
+    @Test
     void shouldRejectOversizedJsonBody() throws Exception {
         String payload = """
             {
@@ -139,6 +164,12 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/payments/history")
                 .header("Authorization", "Bearer " + legacyToken))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldRequireAuthenticationForOpenApiDocs() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
             .andExpect(status().isUnauthorized());
     }
 

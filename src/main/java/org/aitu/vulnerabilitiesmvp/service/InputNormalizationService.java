@@ -10,7 +10,14 @@ import org.springframework.stereotype.Service;
 public class InputNormalizationService {
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9._-]{1,50}$");
-    private static final Pattern FILE_BASENAME_PATTERN = Pattern.compile("^[A-Za-z0-9._-]{1,64}$");
+
+    /*
+     OWASP-10: Mishandling of Exceptional Conditions - имена "."/".." или без букв/цифр проходили allowlist
+     и могли ломать export filename handling. Исправление: basename обязан содержать букву или цифру.
+
+        private static final Pattern FILE_BASENAME_PATTERN = Pattern.compile("^[A-Za-z0-9._-]{1,64}$");
+     */
+    private static final Pattern FILE_BASENAME_PATTERN = Pattern.compile("^(?=.*[A-Za-z0-9])[A-Za-z0-9._-]{1,64}$");
 
     public String normalizeUsername(String value, String fieldName) {
         String normalized = normalizeUnicode(value);

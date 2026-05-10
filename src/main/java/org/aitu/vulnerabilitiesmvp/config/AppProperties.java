@@ -78,6 +78,15 @@ public class AppProperties {
         @Min(8)
         private int maxJsonNumberLength = 64;
 
+        // OWASP-10: Authentication Failures
+        @Min(1)
+        @Max(20)
+        private int maxFailedLoginAttempts = 5;
+
+        @Min(1)
+        @Max(1440)
+        private int loginLockoutMinutes = 15;
+
         @SuppressFBWarnings(
             value = "EI_EXPOSE_REP",
             justification = "Nested JWT settings are a live configuration holder managed inside the application "
@@ -126,6 +135,22 @@ public class AppProperties {
         public void setMaxJsonNumberLength(int maxJsonNumberLength) {
             this.maxJsonNumberLength = maxJsonNumberLength;
         }
+
+        public int getMaxFailedLoginAttempts() {
+            return maxFailedLoginAttempts;
+        }
+
+        public void setMaxFailedLoginAttempts(int maxFailedLoginAttempts) {
+            this.maxFailedLoginAttempts = maxFailedLoginAttempts;
+        }
+
+        public int getLoginLockoutMinutes() {
+            return loginLockoutMinutes;
+        }
+
+        public void setLoginLockoutMinutes(int loginLockoutMinutes) {
+            this.loginLockoutMinutes = loginLockoutMinutes;
+        }
     }
 
     public static class Jwt {
@@ -136,7 +161,9 @@ public class AppProperties {
         @NotBlank
         private String issuer = "vulnerabilities-mvp";
 
+        // OWASP-10: Cryptographic Failures
         @Min(1)
+        @Max(60)
         private long expirationMinutes = 15;
 
         public String getSecret() {

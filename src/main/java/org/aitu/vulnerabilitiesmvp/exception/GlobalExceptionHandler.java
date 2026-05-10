@@ -91,6 +91,17 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.UNAUTHORIZED, ex.getMessage(), request.getRequestURI(), Map.of());
     }
 
+    @ExceptionHandler(AuthenticationRateLimitException.class)
+    public org.springframework.http.ResponseEntity<ApiErrorResponse> handleAuthenticationRateLimit(
+        AuthenticationRateLimitException ex,
+        HttpServletRequest request
+    ) {
+        // OWASP-10: Authentication Failures - throttling должен возвращать контролируемый 429,
+        // а не сливаться с generic 500/400 обработкой исключений.
+        log.warn("Authentication throttled at path={}", request.getRequestURI());
+        return buildError(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request.getRequestURI(), Map.of());
+    }
+
     @ExceptionHandler(ForbiddenOperationException.class)
     public org.springframework.http.ResponseEntity<ApiErrorResponse> handleForbidden(
         ForbiddenOperationException ex,

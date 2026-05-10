@@ -19,6 +19,10 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
   unauthorizedHandler = handler;
 }
 
+/*
+OWASP-10: Cryptographic Failures - хранение JWT в localStorage повышало риск кражи токена при XSS.
+Исправление: клиент читает access token только из sessionStorage с коротким сроком жизни.
+
 export function getStoredToken(): string | null {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
@@ -34,6 +38,26 @@ export function getStoredToken(): string | null {
     return parsed.token;
   } catch {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    return null;
+  }
+}
+ */
+
+export function getStoredToken(): string | null {
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as { token?: string; expiresAt?: number };
+    if (!parsed.token || !parsed.expiresAt || Date.now() >= parsed.expiresAt) {
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      return null;
+    }
+    return parsed.token;
+  } catch {
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
     return null;
   }

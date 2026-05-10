@@ -60,6 +60,8 @@ app:
     max-json-string-length: ${APP_MAX_JSON_STRING_LENGTH:4096}
     max-json-nesting-depth: ${APP_MAX_JSON_NESTING_DEPTH:40}
     max-json-number-length: ${APP_MAX_JSON_NUMBER_LENGTH:64}
+    max-failed-login-attempts: ${APP_MAX_FAILED_LOGIN_ATTEMPTS:5}
+    login-lockout-minutes: ${APP_LOGIN_LOCKOUT_MINUTES:15}
   payments:
     default-page-size: ${APP_DEFAULT_PAGE_SIZE:20}
     max-page-size: ${APP_MAX_PAGE_SIZE:100}

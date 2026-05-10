@@ -20,13 +20,53 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    /*
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        JwtAuthenticationFilter jwtAuthenticationFilter,
+        RequestSizeLimitFilter requestSizeLimitFilter,
+        AuthEntryPoint authEntryPoint,
+        RestAccessDeniedHandler accessDeniedHandler
+    ) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .formLogin(AbstractHttpConfigurer::disable)
+            .cors(Customizer.withDefaults())
+
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
+            )
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
+                .requestMatchers("/api/fraud/**").hasRole("OPERATOR")
+                .requestMatchers(HttpMethod.POST, "/api/payments/**").hasRole("CLIENT")
+                .requestMatchers(HttpMethod.GET, "/api/payments/history/**").hasRole("CLIENT")
+                .requestMatchers(HttpMethod.GET, "/api/payments/**").authenticated()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(requestSizeLimitFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+     */
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -41,24 +81,37 @@ public class SecurityConfig {
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .cors(Customizer.withDefaults())
+            // OWASP-10: Security Misconfiguration - без явных security headers браузерный клиент слабее защищён
+            // от clickjacking, лишней передачи referrer и запуска непредусмотренных источников.
+            // Исправление: задаём CSP, frame deny, no-referrer и Permissions-Policy централизованно.
+
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+                ))
+                .frameOptions(frame -> frame.deny())
+                .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .permissionsPolicy(permissions -> permissions.policy(
+                    "camera=(), microphone=(), geolocation=(), payment=()"
+                ))
+            )
+
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(authEntryPoint)
                 .accessDeniedHandler(accessDeniedHandler)
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                // OWASP-10: Broken Access Control Исправление: публичны только register/login.
+                .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                // OWASP-10: Security Misconfiguration - Swagger/OpenAPI не должен быть публичной
                 .requestMatchers(
-                    "/api/auth/**",
                     "/swagger-ui.html",
                     "/swagger-ui/**",
                     "/v3/api-docs/**"
-                ).permitAll()
-// payments/history
-//                    .requestMatchers("/api/fraud/**").hasRole("OPERATOR")
-//                    .requestMatchers(HttpMethod.POST, "/api/payments/**").hasRole("CLIENT")
-//
-//                    .requestMatchers(HttpMethod.GET, "/api/payments/**").authenticated()
-//                    .anyRequest().authenticated()
+                ).hasRole("OPERATOR")
+
                 .requestMatchers("/api/fraud/**").hasRole("OPERATOR")
                 .requestMatchers(HttpMethod.POST, "/api/payments/**").hasRole("CLIENT")
                 .requestMatchers(HttpMethod.GET, "/api/payments/history/**").hasRole("CLIENT")

@@ -8,7 +8,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (payload: LoginRequest, remember?: boolean) => Promise<void>;
+  login: (payload: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => void;
 }
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(timeout);
   }, [auth, logout]);
 
-  const login = useCallback(async (payload: LoginRequest, remember = true) => {
+  const login = useCallback(async (payload: LoginRequest) => {
     const response = await authApi.login({
       username: payload.username.trim(),
       password: payload.password
@@ -55,10 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userId: typeof decoded?.uid === "number" ? decoded.uid : undefined
       }
     };
-    const storage = remember ? localStorage : sessionStorage;
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    // OWASP-10: Cryptographic Failures - "Keep me signed in" сохранял Bearer JWT в persistent localStorage.
+    // Исправление: токен хранится только в sessionStorage и очищается по exp/logout/401.
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
-    storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
+    sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
     setAuth(nextAuth);
   }, []);
 
@@ -91,20 +91,19 @@ export function useAuth() {
 }
 
 function readAuthState(): AuthState | null {
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
   if (!raw) {
     return null;
   }
   try {
     const parsed = JSON.parse(raw) as AuthState;
     if (!parsed.token || !parsed.user?.role || !parsed.expiresAt || Date.now() >= parsed.expiresAt) {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
       return null;
     }
     return parsed;
   } catch {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
     return null;
   }

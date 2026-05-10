@@ -29,6 +29,8 @@ app:
     max-json-string-length: 4096
     max-json-nesting-depth: 40
     max-json-number-length: 64
+    max-failed-login-attempts: 5
+    login-lockout-minutes: 15
   payments:
     default-page-size: 20
     max-page-size: 100
