@@ -78,6 +78,17 @@ public class PaymentController {
         return paymentService.getPaymentHistory(principal, new PaymentHistoryQuery(page, requestedSize, status, receiverUsername));
     }
 
+    // @GetMapping("/history/export")
+    //    public ResponseEntity<ByteArrayResource> exportHistory(
+    //        @AuthenticationPrincipal AppUserPrincipal principal,
+    //        @RequestParam(defaultValue = "CSV") PaymentExportFormat format,
+    //        @RequestParam(defaultValue = "0") @Min(0) int page,
+    //        @RequestParam(required = false) @Min(1) Integer size,
+    //        @RequestParam(required = false) org.aitu.vulnerabilitiesmvp.enums.PaymentStatus status,
+    //        @RequestParam(required = false) String receiverUsername,
+    //        @RequestParam(required = false) String fileName
+    //    ) {
+
     @GetMapping("/history/export")
     public ResponseEntity<ByteArrayResource> exportHistory(
         @AuthenticationPrincipal AppUserPrincipal principal,
@@ -85,11 +96,7 @@ public class PaymentController {
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(required = false) @Min(1) Integer size,
         @RequestParam(required = false) org.aitu.vulnerabilitiesmvp.enums.PaymentStatus status,
-        @RequestParam(required = false) @Size(max = 50)
-        @Pattern(
-            regexp = "^[A-Za-z0-9._-]+$",
-            message = "receiverUsername must contain only letters, digits, dots, underscores, and hyphens"
-        ) String receiverUsername,
+        @RequestParam(required = false) @Size(max = 50) String receiverUsername,
         @RequestParam(required = false) @Size(max = 64)
         @Pattern(
             regexp = "^[A-Za-z0-9._-]+$",

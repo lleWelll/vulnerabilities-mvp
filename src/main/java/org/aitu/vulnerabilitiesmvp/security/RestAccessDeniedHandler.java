@@ -34,6 +34,28 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         this.auditService = auditService;
     }
 
+    /*
+    @Override
+    public void handle(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        AccessDeniedException accessDeniedException
+    ) throws IOException, ServletException {
+        log.warn("Access denied for path={}", request.getRequestURI());
+
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(), new ApiErrorResponse(
+            Instant.now(),
+            HttpStatus.FORBIDDEN.value(),
+            HttpStatus.FORBIDDEN.getReasonPhrase(),
+            "You are not allowed to access this resource",
+            request.getRequestURI(),
+            Map.of()
+        ));
+    }
+     */
+
     @Override
     public void handle(
         HttpServletRequest request,

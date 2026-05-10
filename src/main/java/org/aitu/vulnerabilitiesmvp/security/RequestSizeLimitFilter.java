@@ -39,6 +39,33 @@ public class RequestSizeLimitFilter extends OncePerRequestFilter {
         this.maxFileSizeBytes = appProperties.getSecurity().getMaxFileSizeBytes();
     }
 
+    /*
+    @Override
+    protected void doFilterInternal(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        FilterChain filterChain
+    ) throws ServletException, IOException {
+        if (requiresBodyLimit(request)) {
+            long contentLength = request.getContentLengthLong();
+            if (contentLength > maxRequestSizeBytes) {
+                response.setStatus(HttpStatus.PAYLOAD_TOO_LARGE.value());
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                objectMapper.writeValue(response.getOutputStream(), new ApiErrorResponse(
+                    Instant.now(),
+                    HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                    HttpStatus.PAYLOAD_TOO_LARGE.getReasonPhrase(),
+                    "Request body is too large",
+                    request.getRequestURI(),
+                    Map.of()
+                ));
+                return;
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+     */
+
     @Override
     protected void doFilterInternal(
         HttpServletRequest request,

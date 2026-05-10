@@ -26,6 +26,21 @@ public final class JwtService {
         this.expirationMinutes = appProperties.getSecurity().getJwt().getExpirationMinutes();
     }
 
+    /*
+     public String generateToken(AppUserPrincipal principal) {
+        Instant issuedAt = Instant.now();
+        Instant expiresAt = issuedAt.plusSeconds(expirationMinutes * 60);
+
+        return Jwts.builder()
+            .subject(principal.getUsername())
+            .claims(Map.of("role", principal.getRole().name(), "uid", principal.getId()))
+            .issuedAt(Date.from(issuedAt))
+            .expiration(Date.from(expiresAt))
+            .signWith(signingKey)
+            .compact();
+    }
+     */
+
     public String generateToken(AppUserPrincipal principal) {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plusSeconds(expirationMinutes * 60);
@@ -45,6 +60,13 @@ public final class JwtService {
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
+
+    /*
+    public boolean isTokenValid(String token, AppUserPrincipal principal) {
+        Claims claims = extractAllClaims(token);
+        return principal.getUsername().equals(claims.getSubject()) && claims.getExpiration().after(new Date());
+    }
+     */
 
     public boolean isTokenValid(String token, AppUserPrincipal principal) {
         Claims claims = extractAllClaims(token);

@@ -59,6 +59,21 @@ public class AuthService {
         this.inputNormalizationService = inputNormalizationService;
     }
 
+    /* normalize
+    @Transactional
+    public RegisterResponse register(RegisterRequest request) {
+        if (userRepository.existsByUsername(request.username())) {
+            throw new DuplicateResourceException("Username is already taken");
+        }
+
+        User user = new User();
+        user.setUsername(request.username().trim());
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setRole(Role.CLIENT);
+        user.setEnabled(true);
+        User savedUser = userRepository.save(user);
+     */
+
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         String normalizedUsername = inputNormalizationService.normalizeUsername(request.username(), "username");
@@ -90,6 +105,14 @@ public class AuthService {
 
         return authMapper.toRegisterResponse(savedUser, savedAccount);
     }
+
+    /* normalize
+    public LoginResponse login(LoginRequest request) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.username().trim(), request.password())
+            );
+     */
 
     public LoginResponse login(LoginRequest request) {
         String normalizedUsername = inputNormalizationService.normalizeUsername(request.username(), "username");

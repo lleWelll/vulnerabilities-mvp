@@ -52,8 +52,12 @@ public class PaymentExportService {
     ) {
         List<PaymentResponse> payments = paymentService.getPaymentHistoryEntries(principal, query);
         String baseName = inputNormalizationService.normalizeExportBaseName(requestedFileName, "payment-history");
+        // String fileName = buildFileName(baseName, format);
         String fileName = buildDownloadFileName(baseName, format);
         Path exportDir = resolveExportDirectory();
+        //if (!exportPath.startsWith(exportDir)) {
+        //            throw new InvalidInputException("Resolved export path is outside the allowed directory");
+        //        }
         Path exportPath = createTempExportPath(exportDir, baseName, format);
 
         try {

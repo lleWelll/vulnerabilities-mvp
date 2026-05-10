@@ -20,6 +20,33 @@ public class AuditService {
         this.auditEventRepository = auditEventRepository;
     }
 
+    /*
+    @Transactional
+    public void record(
+        AuditEventType eventType,
+        String actorUsername,
+        String targetType,
+        Long targetId,
+        AuditOutcome outcome,
+        String metadata
+    ) {
+        AuditEvent event = new AuditEvent();
+        event.setEventType(eventType);
+        event.setActorUsername(actorUsername));
+        event.setTargetType(targetType);
+        event.setTargetId(targetId);
+        event.setOutcome(outcome);
+        event.setMetadata(sanitize(metadata, 500));
+        auditEventRepository.save(event);
+
+        if (outcome == AuditOutcome.SUCCESS) {
+            log.info("audit event={} actor={} targetType={} targetId={}", eventType, actorUsername, targetType, targetId);
+        } else {
+            log.warn("audit event={} actor={} targetType={} targetId={} outcome={}", eventType, actorUsername, targetType, targetId, outcome);
+        }
+    }
+     */
+
     @Transactional
     public void record(
         AuditEventType eventType,

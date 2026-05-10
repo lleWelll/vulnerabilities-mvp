@@ -33,6 +33,10 @@ public class AuthorizationService {
         if (payment.getOwnerUser().getId().equals(principal.getId())) {
             return;
         }
+
+        //if (principal.isOperator()) {
+        //            return;
+        //        }
         if (principal.isOperator() && payment.isFlagged()) {
             return;
         }

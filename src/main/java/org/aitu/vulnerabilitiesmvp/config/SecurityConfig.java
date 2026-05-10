@@ -33,8 +33,7 @@ public class SecurityConfig {
         RestAccessDeniedHandler accessDeniedHandler
     ) throws Exception {
         http
-//            .csrf(AbstractHttpConfigurer::disable)
-            .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+            .csrf(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .cors(Customizer.withDefaults())
@@ -50,6 +49,12 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/v3/api-docs/**"
                 ).permitAll()
+// payments/history
+//                    .requestMatchers("/api/fraud/**").hasRole("OPERATOR")
+//                    .requestMatchers(HttpMethod.POST, "/api/payments/**").hasRole("CLIENT")
+//
+//                    .requestMatchers(HttpMethod.GET, "/api/payments/**").authenticated()
+//                    .anyRequest().authenticated()
                 .requestMatchers("/api/fraud/**").hasRole("OPERATOR")
                 .requestMatchers(HttpMethod.POST, "/api/payments/**").hasRole("CLIENT")
                 .requestMatchers(HttpMethod.GET, "/api/payments/history/**").hasRole("CLIENT")
