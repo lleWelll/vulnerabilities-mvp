@@ -35,9 +35,9 @@ services:
       JWT_ISSUER: vulnerabilities-mvp
       JWT_EXPIRATION_MINUTES: 15
       APP_EXPORT_BASE_DIRECTORY: /app/exports
-      SEED_USER_TEST_CLIENT_1_PASSWORD: ClientOnePass123!
-      SEED_USER_TEST_CLIENT_2_PASSWORD: ClientTwoPass123!
-      SEED_USER_TEST_OPERATOR_PASSWORD: OperatorPass123!
+      SEED_USER_TEST_CLIENT_1_PASSWORD: test_1
+      SEED_USER_TEST_CLIENT_2_PASSWORD: test_2
+      SEED_USER_TEST_OPERATOR_PASSWORD: operator_test_1
     ports:
       - "8080:8080"
     volumes:
